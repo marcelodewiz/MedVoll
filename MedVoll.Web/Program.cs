@@ -58,6 +58,14 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Strict; // Restringe envio de cookies entre sites
 });
 
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true; //garante que os cookies nao pode ser acessados por JavaScript, aumentando a segurança contra ataques XSS
+    options.Cookie.IsEssential = true; //indica que o cookie é essencial para o funcionamento do site, permitindo que seja usado mesmo que o usuário não tenha consentido com cookies não essenciais
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; //garante que os cookies de sessão sejam transmitidos apenas por conexões seguras (HTTPS), protegendo contra ataques de interceptação
+    options.IdleTimeout = TimeSpan.FromMinutes(1); //define o tempo de inatividade após o qual a sessão será encerrada automaticamente, ajudando a proteger contra acesso não autorizado em caso de abandono do dispositivo
+});
+
 builder.Services.AddTransient<IMedicoRepository, MedicoRepository>();
 builder.Services.AddTransient<IConsultaRepository, ConsultaRepository>();
 builder.Services.AddTransient<IMedicoService, MedicoService>();
@@ -73,7 +81,7 @@ builder.Services.AddAntiforgery(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
-
+app.UseSession(); // Habilita o uso de sessões no aplicativo
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
