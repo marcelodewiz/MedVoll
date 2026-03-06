@@ -21,11 +21,15 @@ namespace MedVoll.Web.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<IdentityUser> signInManager, 
+            ILogger<LoginModel> logger, 
+            UserManager<IdentityUser> userManager)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -114,6 +118,11 @@ namespace MedVoll.Web.Areas.Identity.Pages.Account
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
                 if (result.Succeeded)
                 {
+                    HttpContext.Session.Clear();// Limpa a sessão para garantir que não haja dados antigos
+                    var user = await _userManager.FindByEmailAsync(Input.Email);// Reautentica o usuário para garantir que a sessão seja atualizada com as informações mais recentes
+                    await _signInManager.SignOutAsync();// Desloga o usuário para limpar a sessão atual
+                    await _signInManager.SignInAsync(user, Input.RememberMe);// Loga o usuário novamente para atualizar a sessão com as informações mais recentes
+
                     HttpContext.Session.SetString("VollMedCard", "123.4567.789.1234"); 
 
                     _logger.LogInformation("User logged in.");
